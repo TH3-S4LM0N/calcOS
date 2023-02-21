@@ -92,3 +92,8 @@ fn test_vga() {
         crate::println!("test filling screen")
     }
 }
+
+#[test_case]
+fn test_breakpoint() {
+    x86_64::instructions::interrupts::int3();
+}
