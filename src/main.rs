@@ -8,31 +8,34 @@
 #[cfg(not(test))]
 use core::panic::PanicInfo;
 
+use crate::interrupts::hlt_loop;
+
 #[cfg(test)]
 mod test;
 mod vga_buffer;
-mod cpu_interrupts;
+mod interrupts;
 mod gdt;
+mod math;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     // create the interrupt descriptor table
-    cpu_interrupts::init_idt();
+    interrupts::init_idt();
     // double fault stuff
     gdt::init();
-
-    
+    unsafe { interrupts::PICS.lock().initialize() };
+    x86_64::instructions::interrupts::enable();
 
     #[cfg(test)]
     test_main();
 
     println!("Started w/ no error");
-    loop {}
+    hlt_loop();
 }
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-    loop {}
+    hlt_loop();
 }
