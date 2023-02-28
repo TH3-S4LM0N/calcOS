@@ -5,10 +5,9 @@ use crate::{
 };
 
 mod parsing;
-mod equations;
+mod functions;
 
 pub fn process() {
-    // lol
     let mut chars: [char; BUFFER_WIDTH] = GARBAGE.1;
 
     for iters in 0..BUFFER_WIDTH {
@@ -18,6 +17,8 @@ pub fn process() {
                 .ascii_character,
         );
     }
+
+    println!();
 
     // parsing
     let mut maths = GARBAGE.0;
@@ -29,7 +30,5 @@ pub fn process() {
     }
 
     let result = parse_maths(maths);
-
-    println!();
     println!("{result}");
 }

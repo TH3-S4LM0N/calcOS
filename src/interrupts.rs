@@ -77,8 +77,7 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: InterruptStac
                 DecodedKey::Unicode(character) => match character {
                     '\n' => {
                         process();
-                        print!("\n");
-                    }
+                    },
                     _ => print!("{character}")
                 },
                 DecodedKey::RawKey(key) => print!("{key:?}"),

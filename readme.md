@@ -7,5 +7,9 @@ needs: \
     - llvm-tools-preview \
 rust-analyzer doesnt understand and isnt reliable here
 
+### todo
+- order of operations (pain)
+- functions
+
 ### credit
 huge thanks to the people at https://github.com/rust-osdev for making rust os stuff possible
