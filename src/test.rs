@@ -1,4 +1,4 @@
-use crate::{serial_println, serial_print};
+use crate::{serial_println, serial_print, vga_buffer::WRITER};
 use core::{
     fmt::{Arguments, Write},
     panic::PanicInfo,
@@ -84,14 +84,7 @@ macro_rules! serial_println {
 }
 
 // -----actual tests --------
-#[test_case]
-fn test_vga() {
-    crate::println!("test crate::println!");
-    crate::print!("test crate::print!\n");
-    for _ in 0..200 {
-        crate::println!("test filling screen")
-    }
-}
+
 
 #[test_case]
 fn test_breakpoint() {

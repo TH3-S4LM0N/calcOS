@@ -16,6 +16,7 @@ mod vga_buffer;
 mod interrupts;
 mod gdt;
 mod math;
+mod log;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
@@ -29,13 +30,13 @@ pub extern "C" fn _start() -> ! {
     #[cfg(test)]
     test_main();
 
-    println!("Started w/ no error");
+    info!("Started w/o error");
     hlt_loop();
 }
 
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
+    error!("{}", info);
     hlt_loop();
 }

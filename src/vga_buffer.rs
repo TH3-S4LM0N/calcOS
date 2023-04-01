@@ -1,13 +1,15 @@
+use arrayvec::ArrayString;
 use core::fmt;
+use core::fmt::Write;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use volatile::Volatile;
-use core::fmt::Write;
 
+pub const DEFAULT_COLOR: ColorCode = ColorCode::new(Color::White, Color::Black);
 lazy_static! {
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
         column_position: 0,
-        color_code: ColorCode::new(Color::Yellow, Color::Black),
+        color_code: DEFAULT_COLOR,
         buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
     });
 }
@@ -36,10 +38,10 @@ pub enum Color {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
-struct ColorCode(u8);
+pub struct ColorCode(u8);
 
 impl ColorCode {
-    fn new(foreground: Color, background: Color) -> ColorCode {
+    pub const fn new(foreground: Color, background: Color) -> ColorCode {
         ColorCode((background as u8) << 4 | (foreground as u8))
     }
 }
@@ -47,7 +49,7 @@ impl ColorCode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 pub struct ScreenChar {
-    pub ascii_character: u8,
+    ascii_character: u8,
     color_code: ColorCode,
 }
 
@@ -56,13 +58,13 @@ pub const BUFFER_WIDTH: usize = 80;
 
 #[repr(transparent)]
 pub struct Buffer {
-    pub chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 pub struct Writer {
     column_position: usize,
     color_code: ColorCode,
-    pub buffer: &'static mut Buffer,
+    buffer: &'static mut Buffer,
 }
 
 impl Writer {
@@ -118,6 +120,33 @@ impl Writer {
             self.buffer.chars[row][col].write(blank);
         }
     }
+
+    pub fn read_line(&self, line: usize) -> [char; BUFFER_WIDTH] {
+        #[rustfmt::skip]
+        let mut line_contents: [char; BUFFER_WIDTH] = ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a','a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a','a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a','a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a','a', 'a', 'a', 'a', 'a', 'a', 'a', 'a',];
+
+        for iters in 0..BUFFER_WIDTH {
+            line_contents[iters] = char::from(self.buffer.chars[line][iters].read().ascii_character)
+        }
+
+        return line_contents;
+    }
+
+    pub fn read_line_as(&self, line: usize) -> ArrayString<BUFFER_WIDTH> {
+        let mut line_contents = ArrayString::<BUFFER_WIDTH>::new();
+
+        for iters in 0..BUFFER_WIDTH {
+            line_contents.push(char::from(
+                self.buffer.chars[line][iters].read().ascii_character,
+            ));
+        }
+
+        return line_contents;
+    }
+
+    pub fn change_color(&mut self, color: ColorCode) {
+        self.color_code = color;
+    }
 }
 
 impl fmt::Write for Writer {
@@ -129,7 +158,7 @@ impl fmt::Write for Writer {
 
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+    ($($arg:tt)*) => ($crate::vga_buffer::__print(format_args!($($arg)*)));
 }
 
 #[macro_export]
@@ -139,8 +168,28 @@ macro_rules! println {
 }
 
 #[doc(hidden)]
-pub fn _print(args: fmt::Arguments) {
+pub fn __print(args: fmt::Arguments) {
     x86_64::instructions::interrupts::without_interrupts(|| {
         WRITER.lock().write_fmt(args).unwrap();
     });
+}
+
+#[test_case]
+fn test_vga() {
+    crate::println!("test crate::println!");
+    crate::print!("test crate::print!\n");
+    for _ in 0..200 {
+        crate::println!("test filling screen")
+    }
+
+    let test_msg = "This is a test msg";
+    crate::print!("{test_msg}");
+    assert_eq!(
+        test_msg,
+        WRITER
+            .lock()
+            .read_line_as(BUFFER_HEIGHT - 1)
+            .as_str()
+            .trim()
+    );
 }

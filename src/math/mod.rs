@@ -1,34 +1,20 @@
-use crate::{
-    println,
-    math::parsing::{GARBAGE, parse_maths},
-    vga_buffer::{BUFFER_HEIGHT, BUFFER_WIDTH, WRITER},
-};
+use crate::{vga_buffer::{WRITER, BUFFER_HEIGHT}, println};
+
+/// A number that can be returned if the function
+/// prints its own formatted output.
+pub const ESCAPE_NUMBER: f32 = -23.5675634;
 
 mod parsing;
 mod functions;
+mod f32_ext;
 
 pub fn process() {
-    let mut chars: [char; BUFFER_WIDTH] = GARBAGE.1;
-
-    for iters in 0..BUFFER_WIDTH {
-        chars[iters] = char::from(
-            WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][iters]
-                .read()
-                .ascii_character,
-        );
-    }
+    let line = WRITER.lock().read_line(BUFFER_HEIGHT - 1);
 
     println!();
+    let answer = parsing::parse_maths(line);
 
-    // parsing
-    let mut maths = GARBAGE.0;
-
-    let mut iters = 0;
-    for char in chars {
-        maths[iters] = parsing::parse_from_char(char);
-        iters += 1;
+    if answer != ESCAPE_NUMBER {
+        println!("{answer}");
     }
-
-    let result = parse_maths(maths);
-    println!("{result}");
 }

@@ -1,6 +1,6 @@
 use crate::{print, println, vga_buffer::BUFFER_WIDTH};
 use arrayvec::ArrayString;
-use core::fmt::Write;
+use micromath::F32Ext;
 
 pub const GARBAGE: ([MathParts; BUFFER_WIDTH], [char; BUFFER_WIDTH]) = (
     [
@@ -232,6 +232,7 @@ impl MathParts {
             R => Ok("r"),
             S => Ok("s"),
             T => Ok("t"),
+            U => Ok("u"),
             Y => Ok("y"),
             Underscore => Ok("_"),
             _ => Err(MathErr)
@@ -295,7 +296,7 @@ pub fn parse_maths(maths: [MathParts; BUFFER_WIDTH]) -> f32 {
             } 
         } else if mathtype == MathTypes::Letter {
 
-            let mut fn_name = ArrayString::<16>::new();
+            let mut fn_name = ArrayString::<BUFFER_WIDTH>::new();
 
             loop {
                 match fn_name.as_str() {
@@ -310,7 +311,7 @@ pub fn parse_maths(maths: [MathParts; BUFFER_WIDTH]) -> f32 {
                         iters += 1;
 
                         let (arg, _) = get_multidigit_num(&maths, iters);
-                        answer = super::functions::sqrt(arg);
+                        answer = arg.sqrt();
                         break;
                     },
                     "py_thrm" => {
@@ -319,8 +320,17 @@ pub fn parse_maths(maths: [MathParts; BUFFER_WIDTH]) -> f32 {
                         let (arg1, new_index) = get_multidigit_num(&maths, iters);
                         iters = new_index;
                         let (arg2, _) = get_multidigit_num(&maths, iters);
-                        answer = super::functions::py_thrm(arg1, arg2);
+                        answer = super::functions::triangles::py_thrm(arg1, arg2);
                         break;
+                    },
+                    "t_sum" => {
+                        iters += 1;
+                        let (arg1, new_index) = get_multidigit_num(&maths, iters);
+                        iters = new_index;
+                        let (arg2, new_index) = get_multidigit_num(&maths, iters);
+                        iters = new_index;
+                        let (arg3, new_index) = get_multidigit_num(&maths, iters);
+                        println!("{}", super::functions::triangles::sum(arg1, arg2, arg3));
                     },
                     _ => (),
                 }
@@ -354,34 +364,42 @@ fn get_multidigit_num(eq: &[MathParts; BUFFER_WIDTH], mut index: usize) -> (f32,
 }
 
 pub fn parse_from_char(char: char) -> MathParts {
+    use MathParts::*;
     match char {
-        '0' => MathParts::Zero,
-        '1' => MathParts::One,
-        '2' => MathParts::Two,
-        '3' => MathParts::Three,
-        '4' => MathParts::Four,
-        '5' => MathParts::Five,
-        '6' => MathParts::Six,
-        '7' => MathParts::Seven,
-        '8' => MathParts::Eight,
-        '9' => MathParts::Nine,
+        '0' => Zero,
+        '1' => One,
+        '2' => Two,
+        '3' => Three,
+        '4' => Four,
+        '5' => Five,
+        '6' => Six,
+        '7' => Seven,
+        '8' => Eight,
+        '9' => Nine,
 
-        '+' => MathParts::Add,
-        '-' => MathParts::Subtract,
-        '*' => MathParts::Multiply,
-        '/' => MathParts::Divide,
+        '+' => Add,
+        '-' => Subtract,
+        '*' => Multiply,
+        '/' => Divide,
 
-        'e' | 'E' => MathParts::E,
-        'h' | 'H' => MathParts::H,
-        'm' | 'M' => MathParts::M,
-        'p' | 'P' => MathParts::P,
-        'q' | 'Q' => MathParts::Q,
-        'r' | 'R' => MathParts::R,
-        's' | 'S' => MathParts::S,
-        't' | 'T' => MathParts::T,
-        'y' | 'Y' => MathParts::Y,
+        'a' | 'A' => A,
+        'b' | 'B' => B,
+        'c' | 'C' => C,
+        'd' | 'D' => D,
+        'e' | 'E' => E,
+        'f' | 'F' => F,
+        'g' | 'G' => G,
+        'h' | 'H' => H,
+        'm' | 'M' => M,
+        'p' | 'P' => P,
+        'q' | 'Q' => Q,
+        'r' | 'R' => R,
+        's' | 'S' => S,
+        't' | 'T' => T,
+        'u' | 'U' => U,
+        'y' | 'Y' => Y,
 
-        '_' => MathParts::Underscore,
-        _ => MathParts::Null
+        '_' => Underscore,
+        _ => Null
     }
 }
